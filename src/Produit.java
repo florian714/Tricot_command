@@ -17,6 +17,18 @@ public class Produit {
     }
 
     public String getName() {
-        return this.name + " " + this.color + " à " + this.price + " $ ";
+        return this.name;
+    }
+
+    public String getColor() {
+        return this.color;
+    }
+
+    public Integer getId() {
+        return this.id;
+    }
+
+    public Float getPrice() {
+        return this.price;
     }
 }

@@ -19,15 +19,20 @@ public class Boutique {
     // -------------------------------------------------------
     private List<Command> commandes;
     private List<Produit> produits;
+    private List<Client> clients;
 
     // Constructeur
     public Boutique() {
         // initialisation
         this.commandes = new ArrayList<>();
         this.produits = new ArrayList<>();
+        this.clients = new ArrayList<>();
 
         // récuperer tous les produits en stocks
         this.loadProduitsFromCSV("Données/produits.csv");
+        this.loadClientsFromCSV("Données/clients.csv");
+        this.loadCommandsFromCSV("Données/commandes.csv");
+        ;
     }
 
     public static void main(String[] args) {
@@ -46,9 +51,62 @@ public class Boutique {
             String color = scanner.nextLine();
             float price = Float.parseFloat(scanner.nextLine());
             boutique.userAddProduit(name, color, price);
+        } else if ("commande".equals(texteUtilisateur.trim())) {
+            String produitName = scanner.nextLine();
+            String produitColor = scanner.nextLine();
+            String clientName = scanner.nextLine();
+            boutique.passCommand(produitName, produitColor, clientName);
         } else {
             System.out.println("Commande non reconnue");
         }
+    }
+
+    public void addCommand(Command command) {
+        this.commandes.add(command);
+    }
+
+    /*
+     * Passer une commande
+     */
+
+    public void passCommand(String produitName, String produitColor, String clientName) {
+        String filePath = "Données/commandes.csv";
+        String[] derniereLigne = this.lireDerniereLigne(filePath).split(";");
+        int id_command = Integer.parseInt(derniereLigne[0]);
+        System.out.println("id_commande " + id_command);
+
+        int id_produit = 0;
+        for (Produit produit : this.produits) {
+            if (produitName.trim().equals(produit.getName().trim())
+                    & produitColor.trim().equals(produit.getColor().trim())) {
+                id_produit = produit.getId();
+            }
+        }
+
+        int id_client = 0;
+
+        for (Client client : this.clients) {
+            if (clientName.trim().equals(client.getName().trim())) {
+                id_client = client.getId();
+                System.out.println("idclient " + id_client);
+            }
+        }
+
+        String[] newRowData = { Integer.toString(id_command + 1), Integer.toString(id_produit),
+                Integer.toString(id_client) };
+
+        try (FileWriter fw = new FileWriter(filePath, true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter pw = new PrintWriter(bw)) {
+
+            // Écrire la nouvelle ligne dans le fichier CSV
+            pw.println("\n" + String.join(";", newRowData));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        this.addCommand(new Command(id_command + 1, id_client, id_produit));
     }
 
     /**
@@ -59,6 +117,13 @@ public class Boutique {
         System.out.println(this.produits.size());
         for (Produit produit : this.produits) {
             System.out.println(produit.getName());
+        }
+    }
+
+    public void displayCommands() {
+        System.out.println(this.commandes.size());
+        for (Command commande : this.commandes) {
+            System.out.println(Integer.toString(commande.getId()));
         }
     }
 
@@ -75,7 +140,7 @@ public class Boutique {
                 PrintWriter pw = new PrintWriter(bw)) {
 
             // Écrire la nouvelle ligne dans le fichier CSV
-            pw.println(String.join(";", newRowData) + "\n");
+            pw.println("\n" + String.join(";", newRowData));
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -93,6 +158,14 @@ public class Boutique {
     public void addProduit(Produit produit) {
         if (this.produits != null) {
             this.produits.add(produit);
+        } else {
+            System.err.println("La liste des produits n'est pas initialisée.");
+        }
+    }
+
+    public void addClient(Client client) {
+        if (this.clients != null) {
+            this.clients.add(client);
         } else {
             System.err.println("La liste des produits n'est pas initialisée.");
         }
@@ -133,6 +206,80 @@ public class Boutique {
                     Produit produit = new Produit(id, name, color, price);
                     // Ajouter le produit
                     this.addProduit(produit);
+                } else {
+                    System.err.println("Format de ligne incorrect : " + line);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Erreur lors de la lecture du fichier : " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.err.println("Erreur de format de nombre dans le fichier : " + e.getMessage());
+        }
+    }
+
+    public void loadClientsFromCSV(String filePath) {
+        URL url = getClass().getClassLoader().getResource(filePath);
+
+        // Vérifier si l'URL est null
+        if (url == null) {
+            System.err.println("Ressource non trouvée : " + filePath);
+            return;
+        }
+
+        try (InputStream inputStream = url.openStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+
+            String line;
+            br.readLine(); // Skip the header line
+
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(";");
+
+                if (data.length == 3) {
+                    int id = Integer.parseInt(data[0].trim());
+                    String name = data[1].trim();
+                    String mdp = data[2].trim();
+                    // Créer le produit
+                    Client client = new Client(id, name, mdp);
+                    // Ajouter le produit
+                    this.addClient(client);
+                } else {
+                    System.err.println("Format de ligne incorrect : " + line);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Erreur lors de la lecture du fichier : " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.err.println("Erreur de format de nombre dans le fichier : " + e.getMessage());
+        }
+    }
+
+    public void loadCommandsFromCSV(String filePath) {
+        URL url = getClass().getClassLoader().getResource(filePath);
+
+        // Vérifier si l'URL est null
+        if (url == null) {
+            System.err.println("Ressource non trouvée : " + filePath);
+            return;
+        }
+
+        try (InputStream inputStream = url.openStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+
+            String line;
+            br.readLine(); // Skip the header line
+
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(";");
+
+                if (data.length == 3) {
+                    int id = Integer.parseInt(data[0].trim());
+                    int id_client = Integer.parseInt(data[1].trim());
+                    int id_produit = Integer.parseInt(data[2].trim());
+                    // Créer le produit
+                    Command command = new Command(id, id_client, id_produit);
+                    // Ajouter le produit
+                    this.addCommand(command);
                 } else {
                     System.err.println("Format de ligne incorrect : " + line);
                 }

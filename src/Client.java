@@ -12,4 +12,16 @@ public class Client {
         this.name = name;
         this.mdp = mdp;
     }
+
+    public int getId() {
+        return this.id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public String getMpd() {
+        return this.mdp;
+    }
 }
